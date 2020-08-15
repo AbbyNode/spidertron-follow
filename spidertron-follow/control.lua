@@ -1,80 +1,87 @@
-global.players = {}
-global.spiders = {}
+script.on_init(function()
+	global.characters = {}
+	global.spiders = {}
+end)
 
-local function add_leader(spider, player)
+local function add_leader(spider, character)
 	-- Remove previous leader if exists
 	if (global.spiders[spider.unit_number] ~= nil) then
 		remove_leader(spider)
 	end
 
-	-- Create player's table if needed
-	if (global.players[player.unit_number] == nil) then
-		global.players[player.unit_number] = {}
+	-- Create character's table if needed
+	if (global.characters[character.unit_number] == nil) then
+		global.characters[character.unit_number] = {}
 	end
 
-	-- Insert spider into player's table
-	global.players[player.unit_number][spider.unit_number] = true
+	-- Insert spider into character's table
+	global.characters[character.unit_number][spider.unit_number] = spider
 
-	-- Assign player reference to spider
-	global.spiders[spider.unit_number] = player.unit_number
+	-- Assign character reference to spider
+	global.spiders[spider.unit_number] = character.unit_number
 end
 
 local function remove_leader(spider)
-	-- Get player reference
-	local player_unit_number = global.spiders[spider.unit_number]
+	-- Get character reference
+	local character_unit_number = global.spiders[spider.unit_number]
 
 	-- If reference exists
-	if (player_unit_number ~= nil) then
-		-- If player has table
-		if (global.players[player_unit_number] ~= nil) then
+	if (character_unit_number ~= nil) then
+		-- If character has table
+		if (global.characters[character_unit_number] ~= nil) then
 			-- Remove reference to spider
 			-- Don't need to check if it exists, we're just setting it to nil
-			global.players[player_unit_number][spider.unit_number] = nil
+			global.characters[character_unit_number][spider.unit_number] = nil
 		end
 
-		-- Remove reference to player
+		-- Remove reference to character
 		global.spiders[spider.unit_number] = nil
 	end
 end
 
 local function on_player_used_spider_remote(event)
+	-- Remove leader if exists
 	remove_leader(event.vehicle)
 
-	local surface = game.get_player(event.player_index).surface
+	-- Gather event data
+	local player = game.get_player(event.player_index)
+	local surface = player.surface
 	local bounds = {{event.position.x-0.5, event.position.y}
 					, {event.position.x+0.5, event.position.y+1}}
 	local filter = {area=bounds, type="character"}
 
-	local selectedPlayer
+	-- Find character at click position
+	local selectedCharacter
 	for _, entity in ipairs(surface.find_entities_filtered(filter)) do
-		selectedPlayer = entity
+		selectedCharacter = entity
 		break
 	end
 
-	if (selectedPlayer) then
-		add_leader(event.vehicle, selectedPlayer)
+	-- If character found, add it as the spider's leader
+	if (selectedCharacter) then
+		add_leader(event.vehicle, selectedCharacter)
+		game.print("Attached spider to " .. player.name)
 	end
 end
 
 
 local function on_player_changed_position(event)
+	-- Gather event data
 	local player = game.get_player(event.player_index)
-	local player_spider_table = global.players[player.unit_number]
 
-	-- If player has spider followers
-	if (player_spider_table ~= nil) then
-		for _, spider_unit_number in ipairs(player_spider_table) do
-			game.print(spider_unit_number)
+	-- If player has a character
+	if (player.character ~= nil) then
+		-- Get spider followers table
+		local character_spider_table = global.characters[player.character.unit_number]
+
+		-- If character has spider followers
+		if (character_spider_table ~= nil) then
+			for spider_unit_number, spider in pairs(character_spider_table) do
+				game.print(spider_unit_number)
+			end
 		end
 	end
-
-	--[[
-	if (player.spider_followers ~= nil) then
-		game.print("has followers")
-	end
-	]]--
 end
-
 
 script.on_event(defines.events.on_player_used_spider_remote, on_player_used_spider_remote)
 script.on_event(defines.events.on_player_changed_position, on_player_changed_position)
