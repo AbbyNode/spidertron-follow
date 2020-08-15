@@ -1,5 +1,3 @@
-
-
 global.players = {}
 global.spiders = {}
 
@@ -37,46 +35,10 @@ local function remove_leader(spider)
 		-- Remove reference to player
 		global.spiders[spider.unit_number] = nil
 	end
-
-	--[[
-	-- If spider has leader
-	if (spider_leader ~= nil) then
-		local leader_table = global.players[spider_leader_unit_number]
-
-		-- If table exists
-		if (leader_table ~= nil) then
-			-- Loop through and find spider
-			for key, spider_unit_number_i in ipairs(leader_table) do
-				-- If spider found
-				if (spider.unit_number == spider_unit_number_i) then
-					-- Remove it from table
-					global.players[player_unit_number] = nil
-				end
-			end
-		end
-
-		spider.leader = nil
-	end
-	]]--
 end
 
 local function on_player_used_spider_remote(event)
 	remove_leader(event.vehicle)
-
-	--[[
-	local player = game.get_player(event.player_index)
-	local surface = player.surface
-	local pos = {x = event.position.x, y = event.position.y}
-	local bounds = {{pos.x-0.5, pos.y}, {pos.x+0.5, pos.y+1}}
-	local filter = {area=bounds, type="character"}
-
-	local selectedPlayer
-	local clickedCharacters = surface.find_entities_filtered(filter)
-	for _, entity in ipairs(clickedCharacters) do
-		selectedPlayer = entity
-		break
-	end
-	]]--
 
 	local surface = game.get_player(event.player_index).surface
 	local bounds = {{event.position.x-0.5, event.position.y}
@@ -97,6 +59,14 @@ end
 
 local function on_player_changed_position(event)
 	local player = game.get_player(event.player_index)
+	local player_spider_table = global.players[player.unit_number]
+
+	-- If player has spider followers
+	if (player_spider_table ~= nil) then
+		for _, spider_unit_number in ipairs(player_spider_table) do
+			game.print(spider_unit_number)
+		end
+	end
 
 	--[[
 	if (player.spider_followers ~= nil) then
