@@ -1,0 +1,9 @@
+{
+	"name": "spidertron-follow",
+	"version": "0.0.1",
+	"title": "Spidertron Follow",
+	"author": "Blucifer",
+	"factorio_version": "1.0",
+	"dependencies": ["base >= 1.0"],
+	"description": "Spidertron functionallity to follow players"
+}
