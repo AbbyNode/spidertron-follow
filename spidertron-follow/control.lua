@@ -1,7 +1,12 @@
 script.on_init(function()
 	global.characters = {}
 	global.spiders = {}
+
+	global.maxOffset = 12
+	global.minOffset = 8
 end)
+
+--
 
 local function add_leader(spider, character)
 	-- Remove previous leader if exists
@@ -39,6 +44,49 @@ local function remove_leader(spider)
 	end
 end
 
+local function follow_character(spider, character)
+	local xDist = spider.position.x - character.position.x
+	local yDist = spider.position.y - character.position.y
+
+	local xFarFlag = false
+	local yFarFlag = false
+
+	if (math.abs(xDist) >= global.maxOffset) then
+		xFarFlag = true
+	end
+
+	if (math.abs(yDist) >= global.maxOffset) then
+		yFarFlag = true
+	end
+
+	if (xFarFlag or yFarFlag) then
+		local newPos = {
+			x=spider.position.x,
+			y=spider.position.y
+		}
+		
+		if (xFarFlag) then
+			if (xDist > 0) then
+				newPos.x = character.position.x + global.minOffset
+			else
+				newPos.x = character.position.x - global.minOffset
+			end
+		end
+
+		if (yFarFlag) then
+			if (yDist > 0) then
+				newPos.y = character.position.y + global.minOffset
+			else
+				newPos.y = character.position.y - global.minOffset
+			end
+		end
+
+		spider.autopilot_destination = newPos
+	end
+end
+
+--
+
 local function on_player_used_spider_remote(event)
 	-- Remove leader if exists
 	remove_leader(event.vehicle)
@@ -60,10 +108,19 @@ local function on_player_used_spider_remote(event)
 	-- If character found, add it as the spider's leader
 	if (selectedCharacter) then
 		add_leader(event.vehicle, selectedCharacter)
-		game.print("Attached spider to " .. player.name)
+
+		-- Get player name
+		local name
+		if (selectedCharacter.player ~= nil) then
+			name = selectedCharacter.player.name
+		else
+			name = selectedCharacter.name
+		end
+
+		-- Show message
+		player.print({"spider.attached-spider", name})
 	end
 end
-
 
 local function on_player_changed_position(event)
 	-- Gather event data
@@ -77,11 +134,13 @@ local function on_player_changed_position(event)
 		-- If character has spider followers
 		if (character_spider_table ~= nil) then
 			for spider_unit_number, spider in pairs(character_spider_table) do
-				game.print(spider_unit_number)
+				follow_character(spider, player.character)
 			end
 		end
 	end
 end
+
+--
 
 script.on_event(defines.events.on_player_used_spider_remote, on_player_used_spider_remote)
 script.on_event(defines.events.on_player_changed_position, on_player_changed_position)
