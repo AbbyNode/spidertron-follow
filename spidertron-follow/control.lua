@@ -48,24 +48,16 @@ local function follow_character(spider, character)
 	local xDist = spider.position.x - character.position.x
 	local yDist = spider.position.y - character.position.y
 
-	local xFarFlag = false
-	local yFarFlag = false
+	local xDistAbs = math.abs(xDist)
+	local yDistAbs = math.abs(yDist)
 
-	if (math.abs(xDist) >= global.maxOffset) then
-		xFarFlag = true
-	end
-
-	if (math.abs(yDist) >= global.maxOffset) then
-		yFarFlag = true
-	end
-
-	if (xFarFlag or yFarFlag) then
+	if (xDistAbs >= global.maxOffset or yDistAbs >= global.maxOffset) then
 		local newPos = {
 			x=spider.position.x,
 			y=spider.position.y
 		}
 		
-		if (xFarFlag) then
+		if (xDistAbs >= global.minOffset) then
 			if (xDist > 0) then
 				newPos.x = character.position.x + global.minOffset
 			else
@@ -73,7 +65,7 @@ local function follow_character(spider, character)
 			end
 		end
 
-		if (yFarFlag) then
+		if (yDistAbs >= global.minOffset) then
 			if (yDist > 0) then
 				newPos.y = character.position.y + global.minOffset
 			else
