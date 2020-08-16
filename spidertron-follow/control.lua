@@ -6,11 +6,6 @@ end)
 --
 
 local function add_leader(spider, character)
-	-- Remove previous leader if exists
-	if (global.spiders[spider.unit_number] ~= nil) then
-		remove_leader(spider)
-	end
-
 	-- Create character's table if needed
 	if (global.characters[character.unit_number] == nil) then
 		global.characters[character.unit_number] = {}
@@ -19,7 +14,7 @@ local function add_leader(spider, character)
 	-- Insert spider into character's table
 	global.characters[character.unit_number][spider.unit_number] = spider
 
-	-- Assign character reference to spider
+	-- Assign character to spider
 	global.spiders[spider.unit_number] = character.unit_number
 end
 
@@ -40,6 +35,8 @@ local function remove_leader(spider)
 		global.spiders[spider.unit_number] = nil
 	end
 end
+
+--
 
 local function follow_character(spider, character, minOffset, maxOffset)
 	-- Distance between player and spider
@@ -80,10 +77,50 @@ end
 
 --
 
-local function on_player_used_spider_remote(event)
-	-- Remove leader if exists
-	remove_leader(event.vehicle)
+local function attempt_add_leader(spider, character)
+	if (spider.valid and character.valid) then
+		-- Get previous leader
+		local prevLeader = global.spiders[spider.unit_number]
 
+		-- If previous is different from new,
+		if (prevLeader ~= character.unit_number) then
+			-- If previous exists
+			if (prevLeader ~= nil) then
+				-- Remove previous
+				remove_leader(spider.unit_number)
+			end
+	
+			-- Add new
+			add_leader(spider, character)
+		end
+	end
+end
+
+local function attempt_remove_leader(spider, character)
+	if (spider.valid) then
+		remove_leader(spider)
+	end
+end
+
+local function attempt_follow_character(spider, character, minOffset, maxOffset)
+	if (spider.valid) then
+		follow_character(spider, character, minOffset, maxOffset)
+	end
+end
+
+local function get_character_name(character)
+	local name
+	if (character.player ~= nil) then
+		name = character.player.name
+	else
+		name = character.name
+	end
+	return name
+end
+
+--
+
+local function on_player_used_spider_remote(event)
 	-- Gather event data
 	local player = game.get_player(event.player_index)
 	local surface = player.surface
@@ -98,20 +135,16 @@ local function on_player_used_spider_remote(event)
 		break
 	end
 
-	-- If character found, add it as the spider's leader
-	if (selectedCharacter) then
-		add_leader(event.vehicle, selectedCharacter)
-
-		-- Get player name
-		local name
-		if (selectedCharacter.player ~= nil) then
-			name = selectedCharacter.player.name
-		else
-			name = selectedCharacter.name
-		end
-
+	-- If character found
+	if (selectedCharacter ~= nil) then
+		-- Add it as the spider's leader
+		attempt_add_leader(event.vehicle, selectedCharacter)
+		
 		-- Show message
-		player.print({"spider.attached-spider", name})
+		player.print({"spider.attached-spider", get_character_name(selectedCharacter)})
+	else
+		-- Else remove any existing leader
+		attempt_remove_leader(event.vehicle)
 	end
 end
 
@@ -136,8 +169,16 @@ local function on_player_changed_position(event)
 			
 			-- Loop through spider followers and get them to follow player character
 			for spider_unit_number, spider in pairs(character_spider_table) do
-				follow_character(spider, player.character, minOffset, maxOffset)
+				attempt_follow_character(spider, player.character, minOffset, maxOffset)
 			end
+		end
+	end
+end
+
+local function on_entity_destroyed(event)
+	for spider_unit_number, spider in pairs(global.spiders) do
+		if (spider_unit_number == event.unit_number) then
+			print("REMOVED")
 		end
 	end
 end
@@ -146,3 +187,4 @@ end
 
 script.on_event(defines.events.on_player_used_spider_remote, on_player_used_spider_remote)
 script.on_event(defines.events.on_player_changed_position, on_player_changed_position)
+script.on_event(defines.events.on_entity_destroyed, on_entity_destroyed)
