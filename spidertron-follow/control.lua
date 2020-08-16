@@ -1,9 +1,6 @@
 script.on_init(function()
 	global.characters = {}
 	global.spiders = {}
-
-	global.maxOffset = 12
-	global.minOffset = 8
 end)
 
 --
@@ -44,32 +41,36 @@ local function remove_leader(spider)
 	end
 end
 
-local function follow_character(spider, character)
+local function follow_character(spider, character, minOffset, maxOffset)
+	-- Distance between player and spider
 	local xDist = spider.position.x - character.position.x
 	local yDist = spider.position.y - character.position.y
 
 	local xDistAbs = math.abs(xDist)
 	local yDistAbs = math.abs(yDist)
 
-	if (xDistAbs >= global.maxOffset or yDistAbs >= global.maxOffset) then
+	-- If distance is greater than maxOffset,
+	if (xDistAbs > maxOffset or yDistAbs > maxOffset) then
 		local newPos = {
 			x=spider.position.x,
 			y=spider.position.y
 		}
 		
-		if (xDistAbs >= global.minOffset) then
-			if (xDist > 0) then
-				newPos.x = character.position.x + global.minOffset
-			else
-				newPos.x = character.position.x - global.minOffset
+		-- If distance is greater than minOffset too
+		if (xDistAbs > minOffset) then
+			if (xDist > 0) then -- Positive dist
+				newPos.x = character.position.x + minOffset
+			else -- Negative dist
+				newPos.x = character.position.x - minOffset
 			end
 		end
 
-		if (yDistAbs >= global.minOffset) then
-			if (yDist > 0) then
-				newPos.y = character.position.y + global.minOffset
-			else
-				newPos.y = character.position.y - global.minOffset
+		-- If distance is greater than minOffset too
+		if (yDistAbs > minOffset) then
+			if (yDist > 0) then -- Positive dist
+				newPos.y = character.position.y + minOffset
+			else -- Negative dist
+				newPos.y = character.position.y - minOffset
 			end
 		end
 
@@ -125,8 +126,17 @@ local function on_player_changed_position(event)
 
 		-- If character has spider followers
 		if (character_spider_table ~= nil) then
+			-- Load player settings
+			local playerSettings = settings.get_player_settings(event.player_index)
+			local minOffset = playerSettings["min-offset"].value
+			local maxOffset = playerSettings["max-offset"].value
+			if (maxOffset < minOffset) then
+				maxOffset = minOffset
+			end
+			
+			-- Loop through spider followers and get them to follow player character
 			for spider_unit_number, spider in pairs(character_spider_table) do
-				follow_character(spider, player.character)
+				follow_character(spider, player.character, minOffset, maxOffset)
 			end
 		end
 	end
