@@ -16,11 +16,14 @@ local function add_leader(spider, character)
 
 	-- Assign character to spider
 	global.spiders[spider.unit_number] = character.unit_number
+
+	-- Detect when spider is destroyed
+	script.register_on_entity_destroyed(spider)
 end
 
-local function remove_leader(spider)
+local function remove_leader(spider_unit_number)
 	-- Get character reference
-	local character_unit_number = global.spiders[spider.unit_number]
+	local character_unit_number = global.spiders[spider_unit_number]
 
 	-- If reference exists
 	if (character_unit_number ~= nil) then
@@ -28,15 +31,13 @@ local function remove_leader(spider)
 		if (global.characters[character_unit_number] ~= nil) then
 			-- Remove reference to spider
 			-- Don't need to check if it exists, we're just setting it to nil
-			global.characters[character_unit_number][spider.unit_number] = nil
+			global.characters[character_unit_number][spider_unit_number] = nil
 		end
 
 		-- Remove reference to character
-		global.spiders[spider.unit_number] = nil
+		global.spiders[spider_unit_number] = nil
 	end
 end
-
---
 
 local function follow_character(spider, character, minOffset, maxOffset)
 	-- Distance between player and spider
@@ -96,9 +97,9 @@ local function attempt_add_leader(spider, character)
 	end
 end
 
-local function attempt_remove_leader(spider, character)
+local function attempt_remove_leader(spider)
 	if (spider.valid) then
-		remove_leader(spider)
+		remove_leader(spider.unit_number)
 	end
 end
 
@@ -166,7 +167,7 @@ local function on_player_changed_position(event)
 			if (maxOffset < minOffset) then
 				maxOffset = minOffset
 			end
-			
+
 			-- Loop through spider followers and get them to follow player character
 			for spider_unit_number, spider in pairs(character_spider_table) do
 				attempt_follow_character(spider, player.character, minOffset, maxOffset)
@@ -178,7 +179,7 @@ end
 local function on_entity_destroyed(event)
 	for spider_unit_number, spider in pairs(global.spiders) do
 		if (spider_unit_number == event.unit_number) then
-			print("REMOVED")
+			remove_leader(spider_unit_number)
 		end
 	end
 end
