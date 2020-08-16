@@ -1,4 +1,12 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.1.0
+Date: 15. 08. 2020
+	Changes:
+		- Added spidertron attachment feature
+		- Added following feature
+		- Added settings
+		- Added English localisation
+---------------------------------------------------------------------------------------------------
 Version: 0.0.1
 Date: 15. 08. 2020
 	Changes:
