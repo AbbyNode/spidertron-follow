@@ -4,6 +4,5 @@
 	"title": "Spidertron Follow",
 	"author": "Blucifer",
 	"factorio_version": "1.0",
-	"dependencies": ["base >= 1.0"],
-	"description": "Spidertron functionallity to follow players"
+	"dependencies": ["base >= 1.0"]
 }
